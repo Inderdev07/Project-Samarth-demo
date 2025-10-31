@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Samarth – Data Q&A System</title>
+<style>
+body {
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #e0f2fe, #fef3c7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+.chat-container {
+  width: 450px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+h2 {
+  text-align: center;
+  margin-bottom: 10px;
+  color: #1e3a8a;
+}
+#chat-box {
+  height: 350px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 10px;
+  background-color: #f9fafb;
+}
+.message { margin: 8px 0; line-height: 1.4; }
+.user { text-align: right; color: #2563eb; }
+.bot { text-align: left; color: #111827; }
+.input-box {
+  display: flex;
+  margin-top: 15px;
+}
+input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  outline: none;
+}
+button {
+  margin-left: 10px;
+  padding: 10px 15px;
+  background: #2563eb;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+button:hover { background: #1e40af; }
+footer {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #6b7280;
+}
+.suggestion {
+  display: inline-block;
+  background: #e0e7ff;
+  color: #1e3a8a;
+  padding: 6px 10px;
+  border-radius: 8px;
+  margin: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+</style>
+</head>
+<body>
+
+<div class="chat-container">
+  <h2>Project Samarth – Data Q&A System</h2>
+  <div id="chat-box">
+    <div class="message bot">
+      👋 Hi! I’m Samarth — your Data Assistant.<br>
+      Try asking:<br>
+      <div class="suggestion" onclick="quickAsk('Compare rainfall in Punjab and Haryana')">Compare rainfall in Punjab and Haryana</div>
+      <div class="suggestion" onclick="quickAsk('Top crops in Punjab')">Top crops in Punjab</div>
+      <div class="suggestion" onclick="quickAsk('Average rainfall in India')">Average rainfall in India</div>
+      <div class="suggestion" onclick="quickAsk('Most produced crop in India')">Most produced crop in India</div>
+    </div>
+  </div>
+
+  <div class="input-box">
+    <input type="text" id="user-input" placeholder="Ask a question...">
+    <button onclick="sendMessage()">Ask</button>
+  </div>
+  <footer>Powered by open data from data.gov.in (Demo)</footer>
+</div>
+
+<script>
+// Demo datasets (static simulation)
+const rainfallData = {
+  "Punjab": [810, 760, 790],
+  "Haryana": [620, 580, 600],
+  "Maharashtra": [890, 910, 870]
+};
+const cropData = {
+  "Punjab": { "Wheat": 16000, "Rice": 14000 },
+  "Haryana": { "Wheat": 12000, "Rice": 8000 },
+  "Maharashtra": { "Sugarcane": 22000, "Cotton": 11000 }
+};
+
+function avg(arr) { return arr.reduce((a,b)=>a+b,0)/arr.length; }
+
+function quickAsk(text) {
+  document.getElementById('user-input').value = text;
+  sendMessage();
+}
+
+function sendMessage() {
+  const input = document.getElementById("user-input");
+  const message = input.value.trim();
+  if (!message) return;
+  const chatBox = document.getElementById("chat-box");
+  chatBox.innerHTML += `<div class='message user'>${message}</div>`;
+  input.value = "";
+
+  setTimeout(() => {
+    const answer = getBotResponse(message);
+    chatBox.innerHTML += `<div class='message bot'>${answer}</div>`;
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }, 600);
+}
+
+function getBotResponse(q) {
+  q = q.toLowerCase();
+  if (q.includes("compare") && q.includes("punjab") && q.includes("haryana")) {
+    const p = avg(rainfallData["Punjab"]).toFixed(2);
+    const h = avg(rainfallData["Haryana"]).toFixed(2);
+    return `🌦 Average rainfall — Punjab: <b>${p} mm</b>, Haryana: <b>${h} mm</b>.<br><small>Source: IMD (demo data)</small>`;
+  }
+  if (q.includes("average") && q.includes("rainfall")) {
+    const all = Object.values(rainfallData).flat();
+    return `☁️ India's demo average rainfall across states: <b>${avg(all).toFixed(2)} mm</b>.<br><small>Source: IMD (demo data)</small>`;
+  }
+  if (q.includes("top") || q.includes("most produced")) {
+    const total = {};
+    for (const s in cropData)
+      for (const [c,v] of Object.entries(cropData[s]))
+        total[c] = (total[c]||0)+v;
+    const top = Object.entries(total).sort((a,b)=>b[1]-a[1])[0];
+    return `🌾 The most produced crop in India is <b>${top[0]}</b> with <b>${top[1]} tonnes</b>.<br><small>Source: Ministry of Agriculture (demo data)</small>`;
+  }
+  if (q.includes("punjab") && q.includes("crop")) {
+    const top = Object.entries(cropData["Punjab"]).sort((a,b)=>b[1]-a[1]);
+    return `🌿 Top crops in Punjab:<br>1️⃣ ${top[0][0]} - ${top[0][1]} t<br>2️⃣ ${top[1][0]} - ${top[1][1]} t<br><small>Source: Ministry of Agriculture (demo data)</small>`;
+  }
+
+  return `🤔 I’m not sure yet! Try asking:<br>
+  <div class="suggestion" onclick="quickAsk('Compare rainfall in Punjab and Haryana')">Compare rainfall in Punjab and Haryana</div>
+  <div class="suggestion" onclick="quickAsk('Top crops in Punjab')">Top crops in Punjab</div>
+  <div class="suggestion" onclick="quickAsk('Average rainfall in India')">Average rainfall in India</div>
+  <div class="suggestion" onclick="quickAsk('Most produced crop in India')">Most produced crop in India</div>`;
+}
+</script>
+
+</body>
+</html>
